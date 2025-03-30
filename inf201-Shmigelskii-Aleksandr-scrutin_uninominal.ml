@@ -112,3 +112,84 @@ let dep3 = [("Alice", 3)];;
 
 assert (union dep1 dep2 = [("Eric", 9); ("Kyle", 4); ("Stan", 6)]);;
 assert (union dep1 dep3 = [("Eric", 7); ("Kyle", 4); ("Stan", 5); ("Alice", 3)]);;
+
+
+(* Question 5 *)
+
+(* 
+Équations de récurrence:
+
+i)  max_depouiller [] -> ??
+
+Nous supposerons que la liste ne peut pas être vide
+
+i) max_depouiller [x] -> x
+
+Posons (c_max, s_max) = max_depouiller depouillement 
+
+ii) max_depouiller (c, s) :: fin -> (c_max, s_max) si (s_max > s)
+                                    (c, s) sinon
+*)
+
+let rec max_depouiller (d: depouillement) : candidat * score =
+   match d with
+   | [x] -> x
+   | (c, s) :: rest -> let (c_max, s_max) = max_depouiller rest in
+                       if s_max > s then (c_max, s_max) else (c, s)
+;;
+
+let dep1 = [("Eric", 7); ("Kyle", 4); ("Stan", 5)];;
+assert (max_depouiller dep1 = ("Eric", 7));;
+
+
+(* Question 6 *)
+
+(* 
+Ce n'est pas une fonction récursive.
+1.	Tout d'abord, pour chaque candidat du panel, on compte le nombre de
+   voix dans l'urne à l'aide de la fonction dépouiller.
+2.	Ensuite, nous trouvons la paire (candidat, nombre de votes) avec le
+   nombre maximum de votes en utilisant la fonction max_depouiller.
+3. Étant donné que la condition ne permet pas d'obtenir une égalité, nous
+   pouvons sans risque retirer le candidat de la paire obtenue.
+*)
+
+let vainqueur_scrutin_uninominal (u : urne) (lc : panel) : candidat =
+   let d = depouiller lc u in
+   let (c, _) = max_depouiller d in c
+;;
+
+let lc1: panel = ["Eric";"Kyle";"Stan"];;
+let u1: urne = ["Eric";"Kyle";"Stan";"Kyle";"Kyle";"Stan";"Eric";"Eric";
+                "Kyle";"Eric";"Stan";"Eric";"Eric";"Eric";"Stan";"Stan"];;
+assert (vainqueur_scrutin_uninominal u1 lc1 = "Eric");;
+
+(* Question 7 *)
+
+(* 
+Nous procéderons selon l'algorithme suivant:
+1. Trouver le candidat ayant le plus grand nombre de voix.
+2. Le supprimons du dépouillement.
+3. Trouver le candidat ayant le plus grand nombre de voix parmi les candidats restants
+4. Retourner la liste de ces deux paires. 
+
+Pour cela, mettons en œuvre une fonction supplémentaire
+pour supprimer un candidat de la liste
+
+*)
+
+let rec supprimer_candidat (c: candidat) (d: depouillement) : depouillement =
+   match d with
+   | [] -> []
+   | (c2, s2) :: fin -> if (c = c2) then fin
+                        else (c2, s2) :: supprimer_candidat c fin
+;;
+
+let deux_premiers (d: depouillement) : depouillement =
+   let (c1, s1) = max_depouiller d in
+   let d_sans_premier = supprimer_candidat c1 d in
+   let (c2, s2) = max_depouiller d_sans_premier in [(c1, s1); (c2, s2)]
+;;
+
+let dep1 = [("Eric", 7); ("Kyle", 4); ("Stan", 5)];;
+assert (deux_premiers dep1 = [("Eric", 7); ("Stan", 5)]);;
